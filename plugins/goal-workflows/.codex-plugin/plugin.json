@@ -1,0 +1,18 @@
+{
+  "name": "goal-workflows",
+  "version": "1.0.0",
+  "description": "Evidence-grounded fresh-task continuation workflows for Codex.",
+  "author": {
+    "name": "watershed"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Goal Workflows",
+    "shortDescription": "Fresh context with verified project continuity.",
+    "longDescription": "Create concise continuation prompts with gp or coordinate verified, non-overlapping successor-task handoffs with gp-relay.",
+    "developerName": "watershed",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use $gp to prepare an evidence-grounded continuation prompt for this project."
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "GP Relay"
+  short_description: "Continue project goals across fresh tasks"
+  default_prompt: "Use $gp-relay to continue this project through verified, non-overlapping successor tasks."
+policy:
+  allow_implicit_invocation: false

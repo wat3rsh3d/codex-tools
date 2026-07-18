@@ -1,0 +1,4 @@
+interface:
+  display_name: "Goal Prompt"
+  short_description: "Create concise project continuation prompts"
+  default_prompt: "Use $gp to create a concise, evidence-grounded prompt for continuing this project."

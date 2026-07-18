@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Goal Workflows</title>
+  <desc id="desc">Two connected task frames with a forward handoff arrow.</desc>
+  <rect width="512" height="512" rx="96" fill="#111315"/>
+  <rect x="86" y="126" width="170" height="224" rx="28" fill="none" stroke="#F2F0E9" stroke-width="24"/>
+  <rect x="256" y="162" width="170" height="224" rx="28" fill="#111315" stroke="#F2F0E9" stroke-width="24"/>
+  <path d="M180 256h148" fill="none" stroke="#E7A84B" stroke-width="28" stroke-linecap="round"/>
+  <path d="m300 222 40 34-40 34" fill="none" stroke="#E7A84B" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

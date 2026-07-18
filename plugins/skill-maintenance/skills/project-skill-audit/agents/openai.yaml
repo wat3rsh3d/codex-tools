@@ -1,0 +1,6 @@
+interface:
+  display_name: "Project Skill Audit"
+  short_description: "Find reusable project skill improvements"
+  default_prompt: "Use $project-skill-audit to compare this project's recurring workflows with its available Codex skills."
+policy:
+  allow_implicit_invocation: false

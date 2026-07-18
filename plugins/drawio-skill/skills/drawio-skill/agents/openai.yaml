@@ -1,0 +1,4 @@
+interface:
+  display_name: "Draw.io Diagrams"
+  short_description: "Create polished, editable draw.io diagrams"
+  default_prompt: "Use $drawio-skill to create an editable architecture diagram from my requirements."

@@ -1,0 +1,18 @@
+{
+  "name": "drawio-skill",
+  "version": "1.14.0",
+  "description": "Generate and validate editable draw.io diagrams with native exports.",
+  "author": {
+    "name": "Agents365-ai"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Draw.io Diagrams",
+    "shortDescription": "Create polished, editable draw.io diagrams.",
+    "longDescription": "Plan, generate, validate, and export editable draw.io architecture, UML, ER, network, and process diagrams.",
+    "developerName": "Agents365-ai",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use $drawio-skill to create an editable architecture diagram from my requirements."
+  }
+}
