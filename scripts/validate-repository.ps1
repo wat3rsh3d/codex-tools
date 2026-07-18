@@ -92,18 +92,25 @@ if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
     $readmeText = Get-Content -LiteralPath $readmePath -Raw -Encoding UTF8
     foreach ($requiredReadmeText in @(
         'wat3rsh3d/codex-tools',
-        'Codex Tools marketplace',
-        'Goal Workflows plugin',
-        'gp skill',
-        'gp-relay skill',
-        'Draw.io Diagrams plugin',
-        'drawio-skill skill',
-        'Skill Maintenance plugin',
-        'Skill Inventory Audit skill',
-        'Project Skill Audit skill',
-        'Fresh working context without losing validated project state.',
-        'Editable source remains available for future changes.',
-        'Prefer reuse or improvement before creating redundant skills.',
+        'Five Codex skills in three independently installable plugins for preserving project momentum',
+        '### Goal Workflows',
+        '### Skill Maintenance',
+        '### Draw.io Diagrams',
+        '| Skill | Benefit |',
+        '| Modifier | Description | Examples |',
+        'Turn current project truth into a compact, paste-ready prompt for a fresh task.',
+        'Keep long-running work moving through a recurring chain of focused, topic-named tasks with verified handoffs.',
+        'See direct skills, cached plugin copies, and model-visible inventory as separate surfaces before maintenance decisions are made.',
+        'Turn repeated project friction into evidence-backed recommendations to reuse, improve, or create a skill.',
+        'Turn complex systems and processes into polished, validated diagrams that remain fully editable.',
+        '#### How `gp` works',
+        '#### How `gp-relay` works',
+        '#### How `skill-inventory-audit` works',
+        '#### How `project-skill-audit` works',
+        '#### How `drawio-skill` works',
+        '## Codex enhancement request: nested tasks',
+        'Nested, reorganizable tasks would turn the Codex sidebar into a durable map of project work.',
+        '### How it would work',
         'Task C / segment 3',
         'it becomes the active segment and can relay again',
         'as many successor tasks as needed'
@@ -115,42 +122,50 @@ if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
     foreach ($rejectedReadmeText in @(
         '## OpenAI submission package',
         'platform.openai.com/plugins',
-        'submission/goal-workflows'
+        'submission/goal-workflows',
+        'A Codex marketplace with three independently installable plugins containing five skills.',
+        "The repository is the marketplace. You install a plugin from it, then invoke one of that plugin's skills.",
+        'Codex Tools marketplace',
+        '|-- Goal Workflows plugin',
+        '|-- Draw.io Diagrams plugin',
+        '`-- Skill Maintenance plugin',
+        '### Goal Workflows plugin',
+        '### Skill Maintenance plugin',
+        '### Draw.io Diagrams plugin'
     )) {
         if ($readmeText -match [regex]::Escape($rejectedReadmeText)) {
-            Add-Failure "README contains submission-only text: $rejectedReadmeText"
+            Add-Failure "README contains rejected text: $rejectedReadmeText"
         }
     }
     $pluginSectionContracts = @(
         @{
             Label = 'Goal Workflows'
-            Start = '### Goal Workflows plugin'
-            End = '### Draw.io Diagrams plugin'
-            Benefits = @(
-                'Fresh working context without losing validated project state.'
-                'Long-running work can rotate through as many topic-named successor tasks as needed.'
-                'Verified handoffs prevent overlapping project work and preserve evidence.'
+            Start = '### Goal Workflows'
+            End = '### Skill Maintenance'
+            Skills = @(
+                @{ Name = '`gp`'; Benefit = 'Turn current project truth into a compact, paste-ready prompt for a fresh task.' }
+                @{ Name = '`gp-relay`'; Benefit = 'Keep long-running work moving through a recurring chain of focused, topic-named tasks with verified handoffs.' }
             )
-        },
-        @{
-            Label = 'Draw.io Diagrams'
-            Start = '### Draw.io Diagrams plugin'
-            End = '### Skill Maintenance plugin'
-            Benefits = @(
-                'Editable source remains available for future changes.'
-                'Composition, structure, and rendered output are checked before delivery.'
-                'One workflow supports reusable styles and common export formats.'
-            )
+            Details = @('#### How `gp` works', '#### How `gp-relay` works')
         },
         @{
             Label = 'Skill Maintenance'
-            Start = '### Skill Maintenance plugin'
-            End = '## Goal Workflows in practice'
-            Benefits = @(
-                'Separate direct skills, cached plugin versions, and model-visible inventory.'
-                'Prefer reuse or improvement before creating redundant skills.'
-                'Read-only, explicit audits keep inspection controlled and reviewable.'
+            Start = '### Skill Maintenance'
+            End = '### Draw.io Diagrams'
+            Skills = @(
+                @{ Name = '`skill-inventory-audit`'; Benefit = 'See direct skills, cached plugin copies, and model-visible inventory as separate surfaces before maintenance decisions are made.' }
+                @{ Name = '`project-skill-audit`'; Benefit = 'Turn repeated project friction into evidence-backed recommendations to reuse, improve, or create a skill.' }
             )
+            Details = @('#### How `skill-inventory-audit` works', '#### How `project-skill-audit` works')
+        },
+        @{
+            Label = 'Draw.io Diagrams'
+            Start = '### Draw.io Diagrams'
+            End = '## Current Codex interaction notes'
+            Skills = @(
+                @{ Name = '`drawio-skill`'; Benefit = 'Turn complex systems and processes into polished, validated diagrams that remain fully editable.' }
+            )
+            Details = @('#### How `drawio-skill` works')
         }
     )
     foreach ($contract in $pluginSectionContracts) {
@@ -161,22 +176,47 @@ if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
             continue
         }
         $sectionText = $readmeText.Substring($sectionStart, $sectionEnd - $sectionStart)
-        $benefitsHeading = $sectionText.IndexOf('**Benefits**')
-        $skillsHeading = $sectionText.IndexOf('**Included skills**')
-        if ($benefitsHeading -lt 0 -or $skillsHeading -lt 0 -or $benefitsHeading -gt $skillsHeading) {
-            Add-Failure "README $($contract.Label) must present Benefits before Included skills"
-            continue
+        $tableHeading = $sectionText.IndexOf('| Skill | Benefit |')
+        if ($tableHeading -lt 0) {
+            Add-Failure "README $($contract.Label) is missing its skill-benefit table"
         }
-        $lastBenefitIndex = $benefitsHeading
-        foreach ($benefit in $contract.Benefits) {
-            $benefitIndex = $sectionText.IndexOf($benefit)
-            if ($benefitIndex -lt 0) {
-                Add-Failure "README $($contract.Label) benefit is missing: $benefit"
-            } elseif ($benefitIndex -le $lastBenefitIndex -or $benefitIndex -ge $skillsHeading) {
-                Add-Failure "README $($contract.Label) benefits are not in priority order"
+        $lastSkillIndex = $tableHeading
+        foreach ($skill in $contract.Skills) {
+            $skillRow = "| $($skill.Name) | $($skill.Benefit) |"
+            $skillIndex = $sectionText.IndexOf($skillRow)
+            if ($skillIndex -lt 0) {
+                Add-Failure "README $($contract.Label) table is missing its skill-benefit row: $($skill.Name)"
+            } elseif ($skillIndex -le $lastSkillIndex) {
+                Add-Failure "README $($contract.Label) skills are not in the expected order"
             } else {
-                $lastBenefitIndex = $benefitIndex
+                $lastSkillIndex = $skillIndex
             }
+        }
+        foreach ($detailHeading in $contract.Details) {
+            $detailIndex = $sectionText.IndexOf($detailHeading)
+            if ($detailIndex -lt 0) {
+                Add-Failure "README $($contract.Label) is missing deeper details: $detailHeading"
+            } elseif ($detailIndex -le $lastSkillIndex) {
+                Add-Failure "README $($contract.Label) must present skill benefits before deeper details"
+            }
+        }
+    }
+
+    $goalStart = $readmeText.IndexOf('### Goal Workflows')
+    $maintenanceStart = $readmeText.IndexOf('### Skill Maintenance')
+    $drawioStart = $readmeText.IndexOf('### Draw.io Diagrams')
+    if ($goalStart -lt 0 -or $maintenanceStart -le $goalStart -or $drawioStart -le $maintenanceStart) {
+        Add-Failure 'README plugin sections must be ordered Goal Workflows, Skill Maintenance, then Draw.io Diagrams'
+    }
+
+    $enhancementStart = $readmeText.IndexOf('## Codex enhancement request: nested tasks')
+    if ($enhancementStart -ge 0) {
+        $enhancementText = $readmeText.Substring($enhancementStart)
+        $imageIndex = $enhancementText.IndexOf('![Concept of project tasks nested by topic](docs/assets/thread-nesting-concept.png)')
+        $benefitIndex = $enhancementText.IndexOf('Nested, reorganizable tasks would turn the Codex sidebar into a durable map of project work.')
+        $detailIndex = $enhancementText.IndexOf('### How it would work')
+        if ($imageIndex -lt 0 -or $benefitIndex -le $imageIndex -or $detailIndex -le $benefitIndex) {
+            Add-Failure 'README enhancement request must present the image first, benefits second, and detailed explanation third'
         }
     }
 }

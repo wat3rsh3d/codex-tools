@@ -1,6 +1,6 @@
 # Codex Tools
 
-A Codex marketplace with three independently installable plugins containing five skills.
+Five Codex skills in three independently installable plugins for preserving project momentum, keeping skill libraries coherent, and turning complex systems into editable diagrams.
 
 ## Install
 
@@ -8,93 +8,38 @@ A Codex marketplace with three independently installable plugins containing five
 codex plugin marketplace add wat3rsh3d/codex-tools --ref main
 ```
 
-Refresh the ChatGPT desktop app, open the Plugins Directory, select **Codex Tools by watershed**, and install the plugin that contains the skill you want.
+Refresh the ChatGPT desktop app, open the Plugins Directory, select **Codex Tools by watershed**, and install the plugin you want.
 
 ## What's included
 
-The repository is the marketplace. You install a plugin from it, then invoke one of that plugin's skills.
+### Goal Workflows
 
-```text
-Codex Tools marketplace
-|-- Goal Workflows plugin
-|   |-- gp skill
-|   `-- gp-relay skill
-|-- Draw.io Diagrams plugin
-|   `-- drawio-skill skill
-`-- Skill Maintenance plugin
-    |-- Skill Inventory Audit skill
-    `-- Project Skill Audit skill
-```
+Move project work into fresh, focused Codex tasks without losing the decisions, evidence, or completion boundaries that make it trustworthy.
 
-### Goal Workflows plugin
-
-Install Goal Workflows when you want to move project work into fresh Codex tasks without losing the evidence needed to continue.
-
-**Benefits**
-
-- Fresh working context without losing validated project state.
-- Long-running work can rotate through as many topic-named successor tasks as needed.
-- Verified handoffs prevent overlapping project work and preserve evidence.
-
-**Included skills**
-
-- **`gp` skill** — build one paste-ready goal prompt for a fresh task. Invoke `$gp`, `$gp 0`, or `$gp <hint>`.
-- **`gp-relay` skill** — continue long-running work through a recurring chain of verified, topic-named successor tasks. Invoke `$gp-relay`, `$gp-relay 0`, or `$gp-relay <hint>`.
-
-See [Goal Workflows in practice](#goal-workflows-in-practice), [the full `gp` contract](docs/gp.md), and [the full recurring relay protocol](docs/gp-relay.md).
-
-### Draw.io Diagrams plugin
-
-Install Draw.io Diagrams when you want Codex to plan, generate, validate, and export an editable diagram.
-
-**Benefits**
-
-- Editable source remains available for future changes.
-- Composition, structure, and rendered output are checked before delivery.
-- One workflow supports reusable styles and common export formats.
-
-**Included skills**
-
-- **`drawio-skill` skill** — create architecture, UML, ER, network, process, or code-structure diagrams and export PNG, SVG, PDF, or JPG. Ask Codex for a draw.io diagram.
-
-See [Draw.io skill details and provenance](docs/drawio-skill.md).
-
-### Skill Maintenance plugin
-
-Install Skill Maintenance when you want explicit, read-only audits of your Codex skills or recurring project workflows. It is one plugin containing two separate skills.
-
-**Benefits**
-
-- Separate direct skills, cached plugin versions, and model-visible inventory.
-- Prefer reuse or improvement before creating redundant skills.
-- Read-only, explicit audits keep inspection controlled and reviewable.
-
-**Included skills**
-
-- **Skill Inventory Audit skill (`skill-inventory-audit`)** — map direct skills, versioned plugin-cache copies, and the CLI model-visible prompt inventory. Invoke `$skill-inventory-audit`.
-- **Project Skill Audit skill (`project-skill-audit`)** — identify recurring project workflows that should reuse, improve, or become skills. Invoke `$project-skill-audit`.
-
-Neither skill makes network requests or changes files. Usage inspection and raw-session inspection remain separately approval-gated. See [Skill Maintenance details](docs/skill-maintenance.md).
-
-## Goal Workflows in practice
-
-Goal Workflows establishes a fresh task with a deliberately selected working set from governing documents, checkpoints, live project state, validation results, decisions, and blockers.
-
-### `gp`: prepare a fresh-task prompt
-
-`gp` inspects the current project and returns one paste-ready Markdown prompt. It does not create the task or perform project work.
-
-| Command | Completion boundary |
+| Skill | Benefit |
 |---|---|
-| `$gp` | The next evidence-backed major milestone |
-| `$gp 0` | Open-ended continuation with no overall completion boundary |
-| `$gp <hint>` | The exact requested outcome, expressed as observable completion gates |
+| `gp` | Turn current project truth into a compact, paste-ready prompt for a fresh task. |
+| `gp-relay` | Keep long-running work moving through a recurring chain of focused, topic-named tasks with verified handoffs. |
 
-You create a fresh task and paste the result.
+#### Modifiers
 
-### `gp-relay`: run a recurring task chain
+Both skills use the same modifier model, so the desired completion boundary is predictable whether the handoff is manual or automated.
 
-`gp-relay` automates verified handoffs between visible, topic-named Codex tasks:
+| Modifier | Description | Examples |
+|---|---|---|
+| No modifier | Target the next evidence-backed major milestone. | `$gp` · `$gp-relay` |
+| `0` | Continue through successive safe slices with no overall completion boundary. | `$gp 0` · `$gp-relay 0` |
+| `<hint>` | Freeze a specific requested outcome as observable completion gates. | `$gp finish the import flow` · `$gp-relay ship the API migration` |
+
+#### How `gp` works
+
+`gp` inspects the smallest useful set of governing documents, checkpoints, live project state, decisions, validation evidence, and blockers. It returns one paste-ready Markdown prompt that lets a fresh task begin from current project truth instead of reconstructing an accumulated conversation.
+
+The prompt establishes the exact root, authority order, verified resume state, safe work queues, decision policy, and completion gates. You review it, create a fresh task, and paste it. [`gp` contract and evidence workflow →](docs/gp.md)
+
+#### How `gp-relay` works
+
+`gp-relay` automates verified handoffs between visible, topic-named Codex tasks while preventing predecessor and successor tasks from doing project work at the same time.
 
 ```text
 Task A / segment 1
@@ -103,44 +48,81 @@ Task A / segment 1
   -> ...
 ```
 
-Each handoff creates exactly one successor. After that successor verifies the goal and receives `START`, it becomes the active segment and can relay again. The cycle continues through as many successor tasks as needed until the chain's completion boundary is verified or a genuine hard boundary leaves no safe work.
+Each handoff creates exactly one successor. After that successor verifies the project and frozen goal, receives `START`, and begins work, it becomes the active segment and can relay again. The cycle continues through as many successor tasks as needed until the chain's completion boundary is verified or a genuine hard boundary leaves no safe work.
 
-For every handoff, the active task:
+At every handoff, the active task finishes or safely unwinds its current operation, validates and checkpoints the exact delta, creates one successor, verifies its `READY` signal, stops its own segment, and sends one verified `START`. Ambiguous results retain the same successor for recovery instead of creating duplicates. [`gp-relay` recurring protocol and recovery model →](docs/gp-relay.md)
 
-1. finishes or safely unwinds its current operation;
-2. validates and checkpoints the exact delta;
-3. creates one successor with a topic-aware title;
-4. verifies the successor's exact goal and `READY` signal;
-5. stops its own segment; and
-6. sends one verified `START` signal.
+#### Why this is different from compaction
 
-The READY/START handshake prevents predecessor and successor tasks from doing project work simultaneously. Ambiguous results retain the same successor for recovery instead of creating duplicates.
+Compaction summarizes older turns so one task can continue. Goal Workflows starts a fresh task with a deliberately selected working set, explicit project boundaries, topic-aware naming, and auditable continuation state. Codex still manages its own context; these skills make the transition between focused tasks intentional.
 
-| Command | Chain boundary |
+### Skill Maintenance
+
+Keep a growing Codex setup understandable and reusable before duplicated skills, cached versions, and repeated project work become invisible maintenance debt.
+
+| Skill | Benefit |
 |---|---|
-| `$gp-relay` | The next evidence-backed major milestone |
-| `$gp-relay 0` | Open-ended continuation through as many successor tasks as needed |
-| `$gp-relay <hint>` | The exact requested outcome, frozen as observable completion gates |
+| `skill-inventory-audit` | See direct skills, cached plugin copies, and model-visible inventory as separate surfaces before maintenance decisions are made. |
+| `project-skill-audit` | Turn repeated project friction into evidence-backed recommendations to reuse, improve, or create a skill. |
 
-### Relationship to compaction
+#### How `skill-inventory-audit` works
 
-Compaction summarizes older turns so one task can continue. Goal Workflows instead starts a fresh task with a deliberately selected working set. Codex continues managing its own context while these skills establish explicit project boundaries, topic-aware task names, and auditable continuation state.
+Invoke `$skill-inventory-audit` to produce a read-only map of direct skill folders, versioned plugin-cache copies, and the skills exposed through the current CLI prompt surface. Its local Python helper also flags duplicate names, malformed frontmatter, and unusually large discovery metadata, with deterministic JSON available for comparisons.
+
+Optional usage inspection reports aggregate explicit invocation counts without retaining task content. Findings remain review signals: the audit does not delete, move, disable, install, or rewrite skills.
+
+#### How `project-skill-audit` works
+
+Invoke `$project-skill-audit` when setup, recovery, validation, review, or handoff work keeps recurring inside a project. It compares scoped project evidence with the skills available to the current task, then recommends the smallest durable response in this order:
+
+1. reuse a skill whose contract already fits;
+2. improve an existing skill with a precise, portable addition; or
+3. create a new skill only for a distinct, recurring workflow.
+
+Each recommendation includes its evidence, expected benefit, exact scope, and a synthetic validation path. Both maintenance skills are explicit, read-only, and local; usage and raw-session inspection remain separately approval-gated. [Skill Maintenance behavior, privacy boundaries, and provenance →](docs/skill-maintenance.md)
+
+### Draw.io Diagrams
+
+Create diagrams that communicate clearly on delivery and remain useful as editable design artifacts afterward.
+
+| Skill | Benefit |
+|---|---|
+| `drawio-skill` | Turn complex systems and processes into polished, validated diagrams that remain fully editable. |
+
+#### How `drawio-skill` works
+
+Ask Codex for a draw.io diagram to plan the composition, generate editable `.drawio` XML, validate its structure and rendered layout, and export the result as PNG, SVG, PDF, or JPG.
+
+The skill supports architecture, UML, ER, sequence, network, process, and code-structure diagrams; reusable visual presets; Graphviz-backed autolayout for dense graphs; official shape and AI-brand icon lookup; and a browser fallback when the desktop CLI is unavailable. [Draw.io capabilities, integrity, and provenance →](docs/drawio-skill.md)
 
 ## Current Codex interaction notes
 
 - `gp-relay` runs only after explicit invocation in a saved Codex project.
 - It responds to host context warnings and bounded material-work turns; current Codex versions do not expose an exact live token meter to the skill.
 - Successors are created in the background and remain visible in the sidebar without being auto-opened.
-- Titles come from the active project milestone. True nested topic placement is the subject of the included [OpenAI feature request](FEATURE_REQUEST.md).
+- Titles come from the active project milestone. True nested topic placement is the subject of the enhancement request below.
 - An exact handoff may update an existing project checkpoint.
+- Skill Maintenance audits remain explicit and read-only; broader local inspection requires separate approval where documented.
 
-## Proposed Codex improvement: nested tasks
-
-The included [feature request](FEATURE_REQUEST.md) proposes collapsible topic groups, parent/child lineage, reversible task reorganization, and creation APIs that could place relay successors under the right project topic automatically.
+## Codex enhancement request: nested tasks
 
 ![Concept of project tasks nested by topic](docs/assets/thread-nesting-concept.png)
 
-This is an illustrative concept, not a current Codex screenshot.
+*Illustrative concept: a saved project contains topic groups such as UI and CI/CD, with related tasks nested beneath them.*
+
+Nested, reorganizable tasks would turn the Codex sidebar into a durable map of project work. Users could understand a complex project at a glance, return to the right workstream faster, and follow continuation chains without decoding an ever-growing flat list.
+
+- **Faster re-entry:** related tasks stay grouped under the topic they serve.
+- **Trustworthy continuation:** predecessor and successor relationships remain visible across every relay.
+- **Organization that survives growth:** tasks can be moved as the project evolves without losing their transcript, project identity, or lineage.
+
+### How it would work
+
+Saved projects would gain collapsible topic groups that can contain tasks and optional subgroups. Every task could retain an independent predecessor/successor lineage, so moving it to a better topic would reorganize the sidebar without rewriting history.
+
+Users could create, rename, reorder, and move topics with mouse, touch, or keyboard controls. Task-creation tools could request both topic placement and predecessor lineage, then read the persisted state back for verification. Automated placement would remain visible, reversible, and permission-aware.
+
+With those host capabilities, `gp-relay` could place each topic-named successor directly under the workstream it belongs to while preserving the exact chain that created it. [Read the complete feature request, proposed host capabilities, and acceptance criteria →](FEATURE_REQUEST.md)
 
 ## Validate or contribute
 
@@ -148,7 +130,7 @@ This is an illustrative concept, not a current Codex screenshot.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-repository.ps1
 ```
 
-Validation covers plugin manifests, marketplace wiring, recurring relay contracts, synthetic audit tests, draw.io provenance, required assets, and common private-data or secret patterns.
+Validation covers plugin manifests, marketplace wiring, recurring relay contracts, synthetic audit tests, draw.io provenance, required assets, the README information contract, and common private-data or secret patterns.
 
 ## Privacy, provenance, and licensing
 
