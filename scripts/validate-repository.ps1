@@ -92,12 +92,91 @@ if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
     $readmeText = Get-Content -LiteralPath $readmePath -Raw -Encoding UTF8
     foreach ($requiredReadmeText in @(
         'wat3rsh3d/codex-tools',
+        'Codex Tools marketplace',
+        'Goal Workflows plugin',
+        'gp skill',
+        'gp-relay skill',
+        'Draw.io Diagrams plugin',
+        'drawio-skill skill',
+        'Skill Maintenance plugin',
+        'Skill Inventory Audit skill',
+        'Project Skill Audit skill',
+        'Fresh working context without losing validated project state.',
+        'Editable source remains available for future changes.',
+        'Prefer reuse or improvement before creating redundant skills.',
         'Task C / segment 3',
         'it becomes the active segment and can relay again',
         'as many successor tasks as needed'
     )) {
         if ($readmeText -notmatch [regex]::Escape($requiredReadmeText)) {
             Add-Failure "README is missing: $requiredReadmeText"
+        }
+    }
+    foreach ($rejectedReadmeText in @(
+        '## OpenAI submission package',
+        'platform.openai.com/plugins',
+        'submission/goal-workflows'
+    )) {
+        if ($readmeText -match [regex]::Escape($rejectedReadmeText)) {
+            Add-Failure "README contains submission-only text: $rejectedReadmeText"
+        }
+    }
+    $pluginSectionContracts = @(
+        @{
+            Label = 'Goal Workflows'
+            Start = '### Goal Workflows plugin'
+            End = '### Draw.io Diagrams plugin'
+            Benefits = @(
+                'Fresh working context without losing validated project state.'
+                'Long-running work can rotate through as many topic-named successor tasks as needed.'
+                'Verified handoffs prevent overlapping project work and preserve evidence.'
+            )
+        },
+        @{
+            Label = 'Draw.io Diagrams'
+            Start = '### Draw.io Diagrams plugin'
+            End = '### Skill Maintenance plugin'
+            Benefits = @(
+                'Editable source remains available for future changes.'
+                'Composition, structure, and rendered output are checked before delivery.'
+                'One workflow supports reusable styles and common export formats.'
+            )
+        },
+        @{
+            Label = 'Skill Maintenance'
+            Start = '### Skill Maintenance plugin'
+            End = '## Goal Workflows in practice'
+            Benefits = @(
+                'Separate direct skills, cached plugin versions, and model-visible inventory.'
+                'Prefer reuse or improvement before creating redundant skills.'
+                'Read-only, explicit audits keep inspection controlled and reviewable.'
+            )
+        }
+    )
+    foreach ($contract in $pluginSectionContracts) {
+        $sectionStart = $readmeText.IndexOf($contract.Start)
+        $sectionEnd = if ($sectionStart -ge 0) { $readmeText.IndexOf($contract.End, $sectionStart + $contract.Start.Length) } else { -1 }
+        if ($sectionStart -lt 0 -or $sectionEnd -lt 0) {
+            Add-Failure "README section boundary is missing: $($contract.Label)"
+            continue
+        }
+        $sectionText = $readmeText.Substring($sectionStart, $sectionEnd - $sectionStart)
+        $benefitsHeading = $sectionText.IndexOf('**Benefits**')
+        $skillsHeading = $sectionText.IndexOf('**Included skills**')
+        if ($benefitsHeading -lt 0 -or $skillsHeading -lt 0 -or $benefitsHeading -gt $skillsHeading) {
+            Add-Failure "README $($contract.Label) must present Benefits before Included skills"
+            continue
+        }
+        $lastBenefitIndex = $benefitsHeading
+        foreach ($benefit in $contract.Benefits) {
+            $benefitIndex = $sectionText.IndexOf($benefit)
+            if ($benefitIndex -lt 0) {
+                Add-Failure "README $($contract.Label) benefit is missing: $benefit"
+            } elseif ($benefitIndex -le $lastBenefitIndex -or $benefitIndex -ge $skillsHeading) {
+                Add-Failure "README $($contract.Label) benefits are not in priority order"
+            } else {
+                $lastBenefitIndex = $benefitIndex
+            }
         }
     }
 }
