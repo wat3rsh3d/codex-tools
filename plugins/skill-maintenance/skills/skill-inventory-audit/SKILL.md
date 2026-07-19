@@ -7,12 +7,12 @@ description: Use when a Codex installation may have skill inventory drift, dupli
 
 ## Overview
 
-Map local Codex skill surfaces without changing them. Treat direct installs, cached plugin versions, and the CLI prompt inventory as separate evidence; a cached copy is not proof that a skill is active.
+Map local Codex skill surfaces without changing them. Treat direct installs, canonical cached plugin skills, and the CLI prompt inventory as separate evidence; a cached copy is not proof that a skill is active.
 
 ## Run the audit
 
 1. Resolve the selected Codex home. Use `$CODEX_HOME` when set; otherwise use the platform's normal `.codex` directory.
-2. Run the bundled helper with an available Python 3 interpreter:
+2. Run the bundled helper with an available Python 3 interpreter. The CLI probe uses the `codex` executable resolved from the current process PATH:
 
    ```text
    python scripts/audit_skill_inventory.py --codex-home <resolved-codex-home>
@@ -26,8 +26,8 @@ Map local Codex skill surfaces without changing them. Treat direct installs, cac
 | Surface | Meaning |
 |---|---|
 | Direct | Skill folders discovered below the selected Codex home's `skills` directory |
-| Plugin cache | Versioned local cache copies grouped by marketplace, plugin, and version |
-| CLI prompt | Skill names observed through `codex debug prompt-input`, when that command is available |
+| Plugin cache | Skill files below each cached version's top-level `skills` directory, grouped by marketplace, plugin, and version |
+| CLI prompt | Skill names observed through `codex debug prompt-input`, plus the resolved Codex executable and version when available |
 | Usage | Optional counts of explicit `$skill-name` invocations in local history records |
 
 Use duplicate findings to identify review candidates, not deletion candidates. Compare descriptions and origins before recommending consolidation. Treat large metadata estimates as opportunities for concise discovery text, not proof of a problem.
@@ -37,7 +37,7 @@ Use duplicate findings to identify review candidates, not deletion candidates. C
 Return, in order:
 
 1. a one-sentence verdict;
-2. counts for each inventory surface;
+2. counts for each inventory surface, including CLI executable and version provenance when available;
 3. evidence-backed duplicate, malformed-metadata, and metadata-size findings;
 4. current Codex integration notes; and
 5. optional next actions ranked by value and reversibility.
@@ -51,5 +51,7 @@ The audit is advisory. Do not delete, move, disable, install, or rewrite skills.
 ## Current Codex notes
 
 - Desktop plugin injection and CLI prompt construction can expose different inventories.
+- Only skills below a cached plugin version's top-level `skills` directory are inventory candidates; fixture, example, test, and documentation trees elsewhere in the cached plugin are ignored.
 - Multiple cached versions can be normal update residue and should remain grouped as cached evidence.
+- CLI provenance identifies the executable already selected by PATH; the audit does not choose another Codex installation.
 - If `codex debug prompt-input` is unavailable, preserve the filesystem findings and note that surface as unavailable.

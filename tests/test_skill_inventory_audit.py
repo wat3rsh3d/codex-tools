@@ -104,6 +104,40 @@ class SkillInventoryAuditTests(unittest.TestCase):
         self.assertEqual("shared", duplicate["name"])
         self.assertEqual(2, duplicate["count"])
 
+    def test_excludes_noncanonical_cached_skill_trees(self) -> None:
+        self.write_skill(
+            "plugins/cache/example-market/toolkit/1.0.0/skills/real/SKILL.md",
+            "real",
+            "Canonical cached skill",
+        )
+        self.write_skill(
+            "plugins/cache/example-market/toolkit/1.0.0/skills/categories/nested/SKILL.md",
+            "nested",
+            "Nested canonical cached skill",
+        )
+        self.write_skill(
+            "plugins/cache/example-market/toolkit/1.0.0/fixtures/example/skills/fixture/SKILL.md",
+            "fixture",
+            "Test fixture",
+        )
+        self.write_skill(
+            "plugins/cache/example-market/toolkit/1.0.0/examples/demo/skills/example/SKILL.md",
+            "example",
+            "Documentation example",
+        )
+
+        report = MODULE.audit_codex_home(
+            self.codex_home,
+            cli_runner=self.unavailable_cli,
+        )
+
+        cached_surface = report["surfaces"]["plugin_cache"]
+        self.assertEqual(
+            ["nested", "real"],
+            sorted(item["name"] for item in cached_surface["skills"]),
+        )
+        self.assertEqual(2, cached_surface["groups"][0]["skill_count"])
+
     def test_isolates_malformed_frontmatter(self) -> None:
         self.write_skill("skills/valid/SKILL.md", "valid", "Valid metadata")
         malformed_path = self.codex_home / "skills" / "broken" / "SKILL.md"
@@ -139,6 +173,51 @@ class SkillInventoryAuditTests(unittest.TestCase):
         self.assertTrue(cli_surface["available"])
         self.assertEqual(["direct", "model-only"], cli_surface["skills"])
         self.assertEqual("", cli_surface["note"])
+        self.assertEqual("", cli_surface["executable"])
+        self.assertEqual("", cli_surface["version"])
+
+    def test_reports_cli_executable_and_version_provenance(self) -> None:
+        report = MODULE.audit_codex_home(
+            self.codex_home,
+            cli_runner=lambda: (
+                0,
+                "<skills>\n- direct: installed\n</skills>\n",
+                "",
+                "C:/Tools/codex.exe",
+                "codex-cli 0.145.0",
+            ),
+        )
+
+        cli_surface = report["surfaces"]["cli_prompt"]
+        self.assertEqual("C:/Tools/codex.exe", cli_surface["executable"])
+        self.assertEqual("codex-cli 0.145.0", cli_surface["version"])
+
+        rendered = MODULE.render_text(report)
+        self.assertIn(
+            "CLI prompt: 1 skill names (codex-cli 0.145.0 at C:/Tools/codex.exe)",
+            rendered,
+        )
+
+    def test_default_cli_probe_tolerates_empty_version_output(self) -> None:
+        with (
+            mock.patch.object(
+                MODULE.shutil,
+                "which",
+                return_value="C:/Tools/codex.exe",
+            ),
+            mock.patch.object(
+                MODULE,
+                "_run_cli_command",
+                side_effect=[
+                    (0, "", ""),
+                    (0, "<skills>\n- direct: installed\n</skills>\n", ""),
+                ],
+            ),
+        ):
+            result = MODULE._default_cli_runner()
+
+        self.assertEqual(0, result[0])
+        self.assertEqual("", result[4])
 
     def test_parses_json_wrapped_cli_prompt_text(self) -> None:
         prompt_payload = json.dumps(
@@ -233,7 +312,7 @@ class SkillInventoryAuditTests(unittest.TestCase):
             report["findings"]["large_metadata"][0]["estimated_tokens"],
             100,
         )
-        self.assertIn('"schema_version": 1', json.dumps(report, sort_keys=True))
+        self.assertIn('"schema_version": 2', json.dumps(report, sort_keys=True))
 
 
 if __name__ == "__main__":

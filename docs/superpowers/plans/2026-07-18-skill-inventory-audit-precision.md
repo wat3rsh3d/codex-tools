@@ -4,7 +4,7 @@
 
 **Goal:** Remove plugin-cache fixture noise and make CLI prompt evidence attributable to the Codex executable that produced it.
 
-**Architecture:** Keep filesystem discovery, CLI probing, reporting, and rendering as separate functions. Recognize only canonical version-level `skills` roots in the cache. Represent CLI results with a small structured probe object while accepting the existing three-value injected runner contract.
+**Architecture:** Keep filesystem discovery, CLI probing, reporting, and rendering as separate functions. Recognize only canonical version-level `skills` roots in the cache. Extend CLI runner results with executable and version fields while accepting the existing three-value injected runner contract.
 
 **Tech stack:** Python 3 standard library, `unittest`, PowerShell repository validation.
 

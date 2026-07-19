@@ -250,7 +250,7 @@ $maintenanceManifestPath = Join-Path $maintenancePluginRoot '.codex-plugin\plugi
 if (Test-Path -LiteralPath $maintenanceManifestPath -PathType Leaf) {
     try {
         $maintenanceManifest = Get-Content -LiteralPath $maintenanceManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-        if ($maintenanceManifest.version -ne '1.0.0') {
+        if ($maintenanceManifest.version -ne '1.0.1') {
             Add-Failure "Skill Maintenance manifest has unexpected version: $($maintenanceManifest.version)"
         }
         if ($maintenanceManifest.author.name -ne 'watershed' -or $maintenanceManifest.interface.developerName -ne 'watershed') {

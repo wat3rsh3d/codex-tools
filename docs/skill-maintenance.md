@@ -11,8 +11,8 @@ The bundled standard-library Python helper reports four distinct surfaces:
 | Surface | Evidence provided |
 |---|---|
 | Direct skills | `SKILL.md` files below the selected Codex home's `skills` directory |
-| Plugin cache | Cached copies grouped by marketplace, plugin, and version |
-| CLI prompt | Skill names returned by `codex debug prompt-input`, when available |
+| Plugin cache | Canonical skills below each cached version's top-level `skills` directory, grouped by marketplace, plugin, and version |
+| CLI prompt | Skill names returned by `codex debug prompt-input`, plus the resolved executable and version when available |
 | Usage | Optional counts of explicit `$skill-name` invocations |
 
 Run the human-readable audit with:
@@ -21,13 +21,15 @@ Run the human-readable audit with:
 python scripts/audit_skill_inventory.py --codex-home <resolved-codex-home>
 ```
 
-Add `--json` for structured local output. Usage inspection is off by default and requires `--include-usage`; it returns aggregate invocation counts rather than task content.
+Add `--json` for structured local output. The current report uses schema version 2. Usage inspection is off by default and requires `--include-usage`; it returns aggregate invocation counts rather than task content.
 
 The report identifies duplicate names, malformed frontmatter, and unusually large discovery metadata. These are review signals. The audit never deletes, moves, disables, installs, or rewrites a skill.
 
 ### Benefits
 
 - Separates installed skill folders from versioned cache residue.
+- Excludes fixture, example, test, and documentation skill trees that are not part of a cached plugin's canonical skill root.
+- Attributes CLI prompt evidence to the exact Codex executable and version selected by the current PATH.
 - Shows how much discovery metadata each skill contributes without loading complete skill bodies.
 - Preserves useful filesystem findings when the CLI prompt surface is unavailable.
 - Produces deterministic JSON suitable for local validation or before-and-after comparisons.
@@ -63,6 +65,7 @@ Both skills act locally and make no network requests. They do not change install
 
 - Desktop plugin injection, direct skill discovery, cached plugin versions, and CLI prompt construction can expose related but different views.
 - `codex debug prompt-input` currently returns a JSON prompt representation; the inventory helper extracts the Available Skills section from its text fields.
+- The inventory helper records the Codex executable and version selected by the current process PATH; it does not select or activate a different installation.
 - A cached plugin version is recorded as cached evidence, not labeled active or obsolete.
 - The current CLI prompt can contain fewer skills than the active Desktop task; both counts remain separate in the report.
 - Both skills disable implicit invocation so their broader local inspection begins only after an explicit request.

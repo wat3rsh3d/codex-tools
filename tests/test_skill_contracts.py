@@ -30,6 +30,8 @@ class SkillMaintenanceContractTests(unittest.TestCase):
         self.assertTrue(frontmatter_description(skill_text).startswith("Use when"))
         self.assertIn("audit_skill_inventory.py", skill_text)
         self.assertIn("--include-usage", skill_text)
+        self.assertIn("top-level `skills` directory", skill_text)
+        self.assertIn("resolved Codex executable and version", skill_text)
         self.assertIn("Do not delete, move, disable, install, or rewrite skills", skill_text)
         self.assertRegex(metadata_text, r"(?m)^\s*allow_implicit_invocation:\s*false\s*$")
 

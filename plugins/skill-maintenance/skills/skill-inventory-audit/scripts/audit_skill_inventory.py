@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
 
-CliRunner = Callable[[], tuple[int, str, str]]
+CliRunResult = tuple[int, str, str] | tuple[int, str, str, str, str]
+CliRunner = Callable[[], CliRunResult]
 METADATA_WARNING_CHARACTERS = 512
 MAX_USAGE_FILES = 200
 
@@ -115,6 +116,11 @@ def _cache_identity(path: Path, cache_root: Path) -> dict[str, str]:
     return {"marketplace": marketplace, "plugin": plugin, "version": version}
 
 
+def _is_canonical_cache_skill(path: Path, cache_root: Path) -> bool:
+    relative_parts = path.relative_to(cache_root).parts
+    return len(relative_parts) >= 5 and relative_parts[3] == "skills"
+
+
 def _scan_plugin_cache(
     codex_home: Path,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, str]]]:
@@ -127,6 +133,8 @@ def _scan_plugin_cache(
     group_counts: Counter[tuple[str, str, str]] = Counter()
 
     for path in sorted(cache_root.rglob("SKILL.md")):
+        if not _is_canonical_cache_skill(path, cache_root):
+            continue
         identity = _cache_identity(path, cache_root)
         entry, problem = _skill_entry(path, codex_home, "plugin_cache", identity)
         if entry:
@@ -149,21 +157,47 @@ def _scan_plugin_cache(
     return skills, groups, malformed
 
 
-def _default_cli_runner() -> tuple[int, str, str]:
-    codex_executable = shutil.which("codex")
-    if not codex_executable:
-        return 127, "", "codex executable unavailable"
+def _run_cli_command(
+    codex_executable: str,
+    arguments: Sequence[str],
+    timeout: int,
+) -> tuple[int, str, str]:
     try:
         completed = subprocess.run(
-            [codex_executable, "debug", "prompt-input"],
+            [codex_executable, *arguments],
             capture_output=True,
             check=False,
             text=True,
-            timeout=20,
+            timeout=timeout,
         )
     except (OSError, subprocess.SubprocessError) as error:
         return 126, "", error.__class__.__name__
     return completed.returncode, completed.stdout, completed.stderr
+
+
+def _default_cli_runner() -> tuple[int, str, str, str, str]:
+    codex_executable = shutil.which("codex")
+    if not codex_executable:
+        return 127, "", "codex executable unavailable", "", ""
+
+    resolved_executable = str(Path(codex_executable).resolve())
+    version_code, version_stdout, version_stderr = _run_cli_command(
+        resolved_executable,
+        ["--version"],
+        timeout=10,
+    )
+    version = ""
+    if version_code == 0:
+        version_output = version_stdout.strip() or version_stderr.strip()
+        if version_output:
+            version = version_output.splitlines()[0]
+
+    return_code, stdout, stderr = _run_cli_command(
+        resolved_executable,
+        ["debug", "prompt-input"],
+        timeout=20,
+    )
+    return return_code, stdout, stderr, resolved_executable, version
 
 
 def _parse_cli_skill_names(output: str) -> list[str]:
@@ -206,14 +240,29 @@ def _parse_cli_skill_names(output: str) -> list[str]:
 
 
 def _scan_cli_prompt(cli_runner: CliRunner | None) -> dict[str, object]:
-    return_code, stdout, _stderr = (cli_runner or _default_cli_runner)()
+    result = (cli_runner or _default_cli_runner)()
+    if len(result) == 3:
+        return_code, stdout, _stderr = result
+        executable = ""
+        version = ""
+    else:
+        return_code, stdout, _stderr, executable, version = result
+
     if return_code != 0:
         return {
             "available": False,
             "skills": [],
             "note": f"codex debug prompt-input unavailable (exit code {return_code})",
+            "executable": executable,
+            "version": version,
         }
-    return {"available": True, "skills": _parse_cli_skill_names(stdout), "note": ""}
+    return {
+        "available": True,
+        "skills": _parse_cli_skill_names(stdout),
+        "note": "",
+        "executable": executable,
+        "version": version,
+    }
 
 
 def _usage_files(codex_home: Path) -> list[Path]:
@@ -310,7 +359,7 @@ def audit_codex_home(
     ]
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "codex_home": str(root),
         "surfaces": {
             "direct": {"skills": direct_skills},
@@ -347,10 +396,20 @@ def render_text(report: dict[str, object]) -> str:
         f"- Direct: {direct_count} skills",
         f"- Plugin cache: {cached_count} skills in {group_count} cached groups",
     ]
+    cli_provenance = ""
+    if cli_prompt["version"] and cli_prompt["executable"]:
+        cli_provenance = f" ({cli_prompt['version']} at {cli_prompt['executable']})"
+    elif cli_prompt["version"]:
+        cli_provenance = f" ({cli_prompt['version']})"
+    elif cli_prompt["executable"]:
+        cli_provenance = f" ({cli_prompt['executable']})"
+
     if cli_prompt["available"]:
-        lines.append(f"- CLI prompt: {len(cli_prompt['skills'])} skill names")
+        lines.append(
+            f"- CLI prompt: {len(cli_prompt['skills'])} skill names{cli_provenance}"
+        )
     else:
-        lines.append(f"- CLI prompt: {cli_prompt['note']}")
+        lines.append(f"- CLI prompt: {cli_prompt['note']}{cli_provenance}")
     if usage["included"]:
         usage_total = sum(usage["counts"].values())
         lines.append(f"- Usage: {usage_total} explicit invocations across {len(usage['counts'])} skills")
