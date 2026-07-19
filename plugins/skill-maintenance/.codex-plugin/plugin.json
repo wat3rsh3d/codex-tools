@@ -1,6 +1,6 @@
 {
   "name": "skill-maintenance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Read-only Codex skill inventory and project workflow audits.",
   "author": {
     "name": "watershed"
